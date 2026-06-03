@@ -1,62 +1,83 @@
+import java.util.Scanner;
 public class Main {
     public static void main(String[] args) {
+        // Scanner nesnesini oluşturuyoruz
+        Scanner scanner = new Scanner(System.in);
 
-        System.out.println("--- BANKACILIK SİSTEMİ TEST ---");
-        Account myAccount = new Account("TR1001", "Ahmet Yılmaz");
+        // Java'ya nokta (.) kullanmasını tam burada söylüyoruz:
+        scanner.useLocale(java.util.Locale.US);
 
-        System.out.println("Hesap Sahibi: " + myAccount.getCustomerName());
-        System.out.println("Başlangıç Bakiyesi: " + myAccount.getBalance() + " TL\n");
+        System.out.println("====== BANKACILIK SİSTEMİ CANLI TEST MERKEZİ ======");
 
-        System.out.println("[İŞLEM]: Hesaba 5000 TL yatırılıyor...");
-        myAccount.deposit(5000.0);
-        System.out.println("Güncel Bakiye: " + myAccount.getBalance() + " TL\n");
+        // ==========================================
+        // SENARYO 1: VADESİZ HESAP (CHECKING ACCOUNT) TESTİ
+        // ==========================================
+        System.out.println("\n--- 1. ADIM: Vadesiz Hesap Oluşturma ---");
+        System.out.print("Hesap Numarası Giriniz: ");
+        String chNo = scanner.nextLine();
+        System.out.print("Müşteri Adı Giriniz: ");
+        String chName = scanner.nextLine();
+        System.out.print("Günlük Para Çekme Limiti Giriniz (Örn: 5000): ");
+        double dailyLimit = scanner.nextDouble();
 
-        System.out.println("[İŞLEM]: Hesaba -100 TL yatırılmaya çalışılıyor...");
-        myAccount.deposit(-100.0);
-        System.out.println("Güncel Bakiye: " + myAccount.getBalance() + " TL\n");
+        // Nesneyi Talha Bey'in istediği gibi konsol bilgileriyle dinamik oluşturuyoruz
+        CheckingAccount checking = new CheckingAccount(chNo, chName, dailyLimit);
+        System.out.println("[SİSTEM]: Vadesiz hesap başarıyla oluşturuldu.");
 
-        System.out.println("[İŞLEM]: Hesaptan 2000 TL çekiliyor...");
-        myAccount.withdraw(2000.0);
-        System.out.println("Güncel Bakiye: " + myAccount.getBalance() + " TL\n");
+        // Para Yatırma Testi
+        System.out.print("\nHesaba yatırmak istediğiniz tutar: ");
+        double chDeposit = scanner.nextDouble();
+        checking.deposit(chDeposit);
 
-        System.out.println("[İŞLEM]: Hesaptan 4000 TL çekilmeye çalışılıyor (Yetersiz Bakiye Testi)...");
-        myAccount.withdraw(4000.0);
-        System.out.println("Son Güncel Bakiye: " + myAccount.getBalance() + " TL");
+        // Limit ve Bakiye Testi (Arka arkaya para çekerek limiti zorlayalım)
+        System.out.println("\n[TEST]: Şimdi günlük limiti ve bakiyeyi zorlayalım...");
+        System.out.print("1. Para Çekme Tutarını Giriniz: ");
+        double chWithdraw1 = scanner.nextDouble();
+        checking.withdraw(chWithdraw1);
 
-        System.out.println("====== 2. AŞAMA:  Kalıtım (Inheritance) ve ÇOK BİÇİMLİLİK (POLYMORPHISM) TESTİ BAŞLADI ======\n");
+        System.out.print("2. Para Çekme Tutarını Giriniz (Limiti aşmayı deneyin): ");
+        double chWithdraw2 = scanner.nextDouble();
+        checking.withdraw(chWithdraw2);
 
-        // 1. VADESİZ HESAP (CHECKING ACCOUNT) TESTİ
-        System.out.println("--- Vadesiz Hesap Test Ediliyor ---");
-        // Günlük çekim limiti 5000 TL olan bir vadesiz hesap açıyoruz
-        CheckingAccount checking = new CheckingAccount("TR-CHECK-101", "Ahmet Yılmaz", 5000.0);
 
-        System.out.println("[İŞLEM]: Hesaba 10.000 TL yatırılıyor...");
-        checking.deposit(10000.0);
-        System.out.println("Mevcut Bakiye: " + checking.getBalance() + " TL");
+        // ==========================================
+        // SENARYO 2: VADELİ HESAP (SAVINGS ACCOUNT) TESTİ
+        // ==========================================
+        System.out.println("\n--- 2. ADIM: Vadeli Hesap Oluşturma ---");
+        scanner.nextLine(); // Konsol tamponunu temizlemek için
+        System.out.print("Hesap Numarası Giriniz: ");
+        String savNo = scanner.nextLine();
+        System.out.print("Müşteri Adı Giriniz: ");
+        String savName = scanner.nextLine();
+        System.out.print("Faiz Oranı Giriniz (Örn: 0.10 -> %10): ");
+        double interestRate = scanner.nextDouble();
+        System.out.print("Vade Gün Sayısı Giriniz (Örn: 30): ");
+        int termDays = scanner.nextInt();
 
-        System.out.println("[EYLEM]: Günlük limiti aşacak şekilde 6000 TL çekilmeye çalışılıyor...");
-        checking.withdraw(6000.0);
+        SavingsAccount savings = new SavingsAccount(savNo, savName, interestRate, termDays);
+        System.out.println("[SİSTEM]: Vadeli hesap başarıyla oluşturuldu.");
 
-        System.out.println("[İŞLEM]: Limit dahilinde 3000 TL çekiliyor...");
-        checking.withdraw(3000.0);
-        System.out.println("Vadesiz Hesap Son Bakiyesi: " + checking.getBalance() + " TL\n");
+        // Para Yatırma Testi (Vadeyi başlatır)
+        System.out.print("\nHesaba yatırmak istediğiniz vadeli tutar: ");
+        double savDeposit = scanner.nextDouble();
+        savings.deposit(savDeposit);
 
-        // 2. VADELİ HESAP (SAVINGS ACCOUNT) TESTİ
-        System.out.println("--- Vadeli Hesap Test Ediliyor ---");
-        SavingsAccount savings = new SavingsAccount("TR-SAVE-202", "Ahmet Yılmaz", 0.05);
+        // ERKEN ÇEKİM TESTİ (Bugün çekmeye çalışıyoruz, vade dolmadığı için faiz yanmalı)
+        System.out.println("\n[TEST]: Vade dolmadan (Erken Çekim) senaryosunu test ediyoruz...");
+        System.out.print("Çekmek istediğiniz tutar (Mevcut bakiyeden az girin): ");
+        double savWithdrawEarly = scanner.nextDouble();
+        savings.withdraw(savWithdrawEarly);
 
-        System.out.println("[İŞLEM]: Hesaba 10.000 TL yatırılıyor...");
-        savings.deposit(10000.0);
-        System.out.println("Mevcut Bakiye: " + savings.getBalance() + " TL");
+        // BÜYÜK SINAV: VADE DOLDUĞUNDA FAİZ EKLEME TESTİ
+        System.out.println("\n[TEST]: Şimdi sistemdeki tarihi 'vade sonrasına' simüle edelim.");
+        System.out.println("Bunun için kodunuzdaki 'today' değişkenini test amaçlı geçmişe veya interestEndDate'i bugüne çekebilirsiniz.");
+        System.out.println("Mevcut kodunuza göre tarih kontrolü çalışacak ve duruma göre faiz işletilecektir.");
 
-        System.out.println("[İŞLEM]: Vadeli hesaptan İLK KEZ 1000 TL çekiliyor (Erken Çekim)...");
-        savings.withdraw(1000.0);
-        System.out.println("İlk çekim sonrası güncel bakiye: " + savings.getBalance() + " TL\n");
+        System.out.print("\nVade sonu için çekmek istediğiniz tutar: ");
+        double savWithdrawLate = scanner.nextDouble();
+        savings.withdraw(savWithdrawLate);
 
-        System.out.println("[İŞLEM]: Vadeli hesaptan İKİNCİ KEZ 500 TL çekiliyor...");
-        savings.withdraw(500.0);
-        System.out.println("Vadeli Hesap Son Bakiyesi: " + savings.getBalance() + " TL");
-
-        System.out.println("\n====== TEST ÇALIŞTIRMASI BAŞARIYLA TAMAMLANDI ======");
+        System.out.println("\n====== TEST SENARYOLARI TAMAMLANDI ======");
+        scanner.close();
     }
 }
