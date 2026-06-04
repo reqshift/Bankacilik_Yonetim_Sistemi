@@ -11,26 +11,18 @@ public class CheckingAccount extends Account {
     }
 
     @Override
-    public void withdraw(double amount) {
-        LocalDate today = LocalDate.now();
-        if(amount > 0) {
-            if (amount <= this.balance) {
-
+    public void withdraw(double amount,LocalDate transactionDate) {
+        LocalDate today = transactionDate;
                 if (!today.equals(lastWithdrawDate)) { // today's date isn't equal to lastWithdrawDate (next day)
                     totalAmount = 0;//resets total daily withdraws
                     lastWithdrawDate = today;
                 }
+
                 if (dailyLimit < amount + totalAmount) {// adds today's all withdraws and compares with daily limit
                     System.out.println("[ERROR]: The transaction could not be completed. Daily withdrawal limit was exceeded.");
-                } else {
+                } else if (super.subtractBalance(amount)) {
+                    System.out.println("[INFO]: The withdraw transaction completed.");
                     totalAmount += amount;
-                    this.balance -= amount;
                 }
-            } else {
-                System.out.println("[ERROR]: The transaction could not be completed. Insufficient balance.");
-            }
-        } else {
-            System.out.println("[ERROR]: Withdrawal amount must be higher than 0.");
-        }
     }
 }
