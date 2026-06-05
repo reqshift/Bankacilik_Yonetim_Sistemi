@@ -5,8 +5,8 @@ public class CheckingAccount extends Account {
     private double totalAmount = 0;
     private LocalDate lastWithdrawDate;
 
-    public CheckingAccount(String accountNo, String customerName, double dailyLimit){ // constructor of checkingAccount
-        super(accountNo, customerName); // calls Account(main class) to sent main's constructor
+    public CheckingAccount(String accountNo, String customerName, double dailyLimit, NotificationService notificationService){ // constructor of checkingAccount
+        super(accountNo, customerName, notificationService); // calls Account(main class) to sent main's constructor
         this.dailyLimit = dailyLimit;
     }
 
@@ -23,6 +23,7 @@ public class CheckingAccount extends Account {
                 } else if (super.subtractBalance(amount)) {
                     System.out.println("[INFO]: The withdraw transaction completed.");
                     totalAmount += amount;
+                    getNotificationService().sendNotification("Amount of " + amount + " TL has been withdrawn from account " + getAccountNo() + ". Current balance: " + getBalance() + " TL");
                 }
     }
 }
