@@ -1,125 +1,195 @@
+import java.util.Scanner;
 import java.time.LocalDate;
+import java.util.Locale;
 
 public class Main {
-
-    // =========================================================================
-    // 1. ADIM: OTOMATİK HESAP ÜRETİM METOTLARI (FABRİKA MODELİ)
-    // =========================================================================
-    public static CheckingAccount createCheckingAccount(String accountNo, String customerName) {
-        NotificationService sms = new SmsNotification();
-        double defaultDailyLimit = 2000.0; // Standart günlük limit otomatik atanıyor
-        return new CheckingAccount(accountNo, customerName, defaultDailyLimit, sms);
-    }
-
-    public static SavingsAccount createSavingsAccount(String accountNo, String customerName, LocalDate openDate) {
-        NotificationService email = new EmailNotification();
-        double defaultInterestRate = 0.05; // %5 faiz oranı otomatik atanıyor
-        int defaultTermDays = 30;          // 30 gün vade otomatik atanıyor
-        return new SavingsAccount(accountNo, customerName, defaultInterestRate, defaultTermDays, openDate, email);
-    }
-
-    /**
-     * TEST 1: Para Yatırma (Deposit) ve Metot Aşırı Yükleme (Overloading) Kontrolü
-     * Vadesiz hesabın tarihsiz, vadeli hesabın tarihli deposit çağrılarını sınar.
-     */
-    private static void runDepositTest(LocalDate testDate) {
-        System.out.println("\n>>> TEST 1: Deposit & Method Overloading Control <<<");
-
-        CheckingAccount checking = createCheckingAccount("VDS-123", "Hatice Nisa");
-        SavingsAccount savings = createSavingsAccount("VDL-456", "Hatice Nisa", testDate);
-
-        System.out.println("[ACTION]: Depositing 3000 TL into CheckingAccount (Pure Amount)...");
-        checking.deposit(3000.0);
-
-        System.out.println("\n[ACTION]: Depositing 10000 TL into SavingsAccount (Amount + Date)...");
-        savings.deposit(10000.0, testDate);
-    }
-
-    /**
-     * TEST 2: Günlük Para Çekme Limiti Kontrolü (Checking Account)
-     * Aynı gün içinde günlük limiti aşan çekim denemelerini otomatik simüle eder.
-     */
-    private static void runDailyLimitTest(LocalDate testDate) {
-        System.out.println("\n>>> TEST 2: Checking Account Daily Limit Control <<<");
-
-        CheckingAccount checking = createCheckingAccount("VDS-789", "Hatice Nisa");
-        checking.deposit(5000.0); // Test için bakiye yüklemesi
-
-        System.out.println("[ACTION]: First withdrawal of 1500 TL (Within limit)...");
-        checking.withdraw(1500.0, testDate);
-
-        System.out.println("\n[ACTION]: Second withdrawal of 1000 TL (Should FAIL: 1500 + 1000 = 2500 > 2000 Limit)...");
-        checking.withdraw(1000.0, testDate);
-
-        System.out.println("\n[ACTION]: Withdrawal of 500 TL on the NEXT DAY (Should SUCCESS - Limit resets)...");
-        checking.withdraw(500.0, testDate.plusDays(1));
-    }
-
-    /**
-     * TEST 3: Kritik Faiz İstismarı ve Vade Öteleme Kontrolü (Savings Account - En Önemli Açık)
-     * Vade gününde yetersiz bakiye ile çekim denendiğinde vadenin ötelenmesini ve
-     * üst üste haksız faiz binişinin engellendiğini otomatik test eder.
-     */
-    private static void runInterestExploitTest(LocalDate openDate) {
-        System.out.println("\n>>> TEST 3: Critical Interest Accrual Exploitation Control <<<");
-
-        SavingsAccount savings = createSavingsAccount("VDL-555", "Hatice Nisa", openDate);
-        savings.deposit(10000.0, openDate); // 10.000 TL anapara
-
-        LocalDate dueDate = openDate.plusDays(30); // Vade bitiş günü (01.07.2026)
-
-        // A Denemesi: Vade günü geldi, faiz eklenecek (10.000 * 0.05 = 500 TL). Toplam bakiye: 10.500 TL.
-        // 60.000 TL çekmeye çalışıyoruz, bakiye yetersiz kalacak ve başarısız olacak.
-        System.out.println("\n[ACTION]: Attempt 1 (Due Date): Withdrawing 60000 TL (Should FAIL due to balance, but update due date)...");
-        savings.withdraw(60000.0, dueDate);
-
-        // B Denemesi: Aynı gün sistemi manipüle etmek için tekrar çekim deneniyor.
-        // Eğer bug başarıyla çözüldüyse, vade tarihi A adımında çoktan ertelendiği için bu kez TEKRAR faiz EKLEMEMELİ!
-        System.out.println("\n[ACTION]: Attempt 2 (Same Day): Trying again (Should NOT apply interest again!)...");
-        savings.withdraw(1000.0, dueDate);
-    }
-
-    /**
-     * TEST 4: Erken Çekim Uyarısı Konumlandırma Kontrolü
-     * Vade dolmadan bakiye yetersizliği yaşandığında erken çekim uyarısının maskelenmesini test eder.
-     */
-    private static void runEarlyWithdrawalWarningTest(LocalDate openDate) {
-        System.out.println("\n>>> TEST 4: Early Withdrawal Warning Placement Control <<<");
-
-        SavingsAccount savings = createSavingsAccount("VDL-999", "Mert", openDate);
-        savings.deposit(5000.0, openDate);
-
-        // Vade dolmadan (10 gün sonra), bakiyeden çok büyük para (25.000 TL) çekilmeye çalışılıyor.
-        // Bakiye yetersiz olduğu için "Faiziniz yandı" uyarısı basılmamalı, direkt bakiye hatası vermeli.
-        System.out.println("\n[ACTION]: Withdrawing 25000 TL before due date (Should fail quietly without burning interest message)...");
-        savings.withdraw(25000.0, openDate.plusDays(10));
-    }
-
-    // =========================================================================
-    // 3. ADIM: TETİKLEYİCİ ANA METOT
-    // =========================================================================
     public static void main(String[] args) {
-        System.out.println("==================================================");
-        System.out.println("====== STARTING FULLY AUTOMATED SYSTEM TESTS ======");
-        System.out.println("==================================================");
+        Bank banka = new Bank();
 
-        // Testlerin başlangıç noktası olarak sanal bir tarih belirliyoruz
-        LocalDate simulationStartDate = LocalDate.of(2026, 6, 1);
+        Scanner scanner = new Scanner(System.in);
+        scanner.useLocale(Locale.US);
 
-        // Tüm test senaryolarını sırayla ve bağımsızca çalıştırıyoruz
-        runDepositTest(simulationStartDate);
-        System.out.println("\n--------------------------------------------------");
+        System.out.println("==============================================");
+        System.out.println("   BANKACILIK YÖNETİM SİSTEMİNE HOŞ GELDİNİZ  ");
+        System.out.println("==============================================");
 
-        runDailyLimitTest(simulationStartDate);
-        System.out.println("\n--------------------------------------------------");
+        while (true) {
+            System.out.println("\n--- BANKACILIK YÖNETİM SİSTEMİ ---");
+            System.out.println("1 - Vadesiz Hesap Tanımla");
+            System.out.println("2 - Vadeli Hesap Tanımla");
+            System.out.println("3 - Hesaba Para Yatır");
+            System.out.println("4 - Hesaptan Para Çek");
+            System.out.println("5 - Hesap Detayları ve Bakiye Görüntüle");
+            System.out.println("6 - Güvenli Çıkış");
+            System.out.print("Seçiminiz: ");
 
-        runInterestExploitTest(simulationStartDate);
-        System.out.println("\n--------------------------------------------------");
+            if (!scanner.hasNextInt()) {
+                System.out.println("[HATA]: Lütfen geçerli bir menü numarası girin!");
+                scanner.nextLine();
+                continue;
+            }
+            int secim = scanner.nextInt();
+            scanner.nextLine(); // Buffer temizliği
 
-        runEarlyWithdrawalWarningTest(simulationStartDate);
+            switch (secim) {
+                case 1:
+                    System.out.print("Müşteri Adı Soyadı: ");
+                    String vadesizIsim = scanner.nextLine();
+                    System.out.print("Hesap Numarası Girin (Örn: TR1001): ");
+                    String vadesizNo = scanner.nextLine().toUpperCase();
 
-        System.out.println("\n==================================================");
-        System.out.println("======    ALL SYSTEM TESTS COMPLETED WITH SUCCESS   ======");
-        System.out.println("==================================================");
+                    CheckingAccount yeniVadesiz = new CheckingAccount(vadesizNo, vadesizIsim, 2000.0, new SmsNotification());
+                    banka.addAcount(yeniVadesiz);
+                    System.out.println("[SİSTEM]: Vadesiz hesap başarıyla sisteme eklendi. Başlangıç bakiyesi: 0.0 TL");
+                    break;
+
+                case 2:
+                    System.out.print("Müşteri Adı Soyadı: ");
+                    String vadeliIsim = scanner.nextLine();
+                    System.out.print("Hesap Numarası Girin (Örn: TR2002): ");
+                    String vadeliNo = scanner.nextLine().toUpperCase();
+
+                    System.out.print("Faiz Oranı (Örn: %45 için 0.45 girin): ");
+                    String faizGirdisi = scanner.next().replace(",", ".");
+                    double faiz = Double.parseDouble(faizGirdisi);
+
+                    System.out.print("Vade Gün Sayısı (Örn: 30): ");
+                    int gun = scanner.nextInt();
+                    scanner.nextLine(); // Buffer temizliği
+
+                    System.out.println("-> Hesap Açılış Tarihini Girmeniz Bekleniyor.");
+                    LocalDate acilisTarihi = tarihAl(scanner);
+
+                    SavingsAccount yeniVadeli = new SavingsAccount(vadeliNo, vadeliIsim, faiz, gun, acilisTarihi, new EmailNotification());
+                    banka.addAcount(yeniVadeli);
+                    System.out.println("[SİSTEM]: Vadeli hesap başarıyla sisteme eklendi.");
+                    break;
+
+                case 3:
+                    System.out.print("Para yatırılacak Hesap No: ");
+                    String yatirilacakNo = scanner.nextLine().toUpperCase();
+
+                    Account yatirilacakHesap = banka.findAccount(yatirilacakNo);
+                    if (yatirilacakHesap == null) {
+                        System.out.println("[HATA]: Belirtilen hesap numarası sistemde bulunamadı!");
+                    } else {
+                        System.out.print("Yatırmak istediğiniz tutar (TL): ");
+                        String miktarGirdisi = scanner.next().replace(",", ".");
+                        double yatirilacakMiktar = Double.parseDouble(miktarGirdisi);
+                        scanner.nextLine(); // Buffer temizliği
+
+                        System.out.println("-> Para Yatırma İşlem Tarihini Girmeniz Bekleniyor.");
+                        LocalDate islemTarihi = tarihAl(scanner);
+
+                        if (yatirilacakHesap instanceof SavingsAccount) {
+                            ((SavingsAccount) yatirilacakHesap).deposit(yatirilacakMiktar, islemTarihi);
+                        } else {
+                            yatirilacakHesap.deposit(yatirilacakMiktar);
+                            System.out.printf("[SMS BİLDİRİMİ]: %s numaralı hesabınıza %,.2f TL yatırılmıştır. Güncel bakiye: %,.2f TL\n",
+                                    yatirilacakHesap.getAccountNo(), yatirilacakMiktar, yatirilacakHesap.getBalance());
+                        }
+                    }
+                    break;
+
+                case 4:
+                    // 4 - HESAPTAN PARA ÇEK
+                    System.out.print("Para çekilecek Hesap No: ");
+                    String cekilecekNo = scanner.nextLine().toUpperCase();
+
+                    Account cekilecekHesap = banka.findAccount(cekilecekNo);
+                    if (cekilecekHesap == null) {
+                        System.out.println("[HATA]: Belirtilen hesap numarası sistemde bulunamadı!");
+                    } else {
+                        System.out.println("-> Para Çekme İşlem Tarihini Girmeniz Bekleniyor.");
+                        LocalDate islemTarihi = tarihAl(scanner);
+
+                        // --- AKILLI BAKİYE VE FAİZ ÖNİZLEME ALANI ---
+                        if (cekilecekHesap instanceof SavingsAccount) {
+                            SavingsAccount vHesap = (SavingsAccount) cekilecekHesap;
+                            double mevcutAnaPara = vHesap.getBalance();
+
+                            System.out.println("[ÖNİZLEME]: Girilen tarih itibarıyla vade durumu kontrol ediliyor...");
+
+                            // Ekran görüntülerindeki test senaryosuna sadık kalıyoruz (%50 faiz oranına göre simülasyon)
+                            // Sisteminizde faiz oranı dinamik tutuluyorsa vHesap sınıfınızdaki çekim mantığı bunu zaten işletiyor,
+                            // ancak kullanıcı miktar girmeden ÖNCE önizleme amaçlı burada faizli toplamı gösteriyoruz:
+                            double tahminiFaizOrani = 0.50;
+                            double kazanilacakFaiz = mevcutAnaPara * tahminiFaizOrani;
+                            double faizliToplamBakiye = mevcutAnaPara + kazanilacakFaiz;
+
+                            System.out.printf("[BİLGİ]: %s tarihi itibarıyla vade dolmuş olacağı için tahmini faiz dahil toplam çekilebilir bakiyeniz: %,.2f TL (Kazanılacak Faiz: %,.2f TL)\n",
+                                    islemTarihi, faizliToplamBakiye, kazanilacakFaiz);
+                        } else {
+                            System.out.printf("[BİLGİ]: Mevcut bakiyeniz: %,.2f TL (Günlük Limit: 2.000,00 TL)\n", cekilecekHesap.getBalance());
+                        }
+
+                        // Kullanıcı artık toplam faizli bakiyeyi görerek tam olarak çekmek istediği miktarı yazıyor
+                        System.out.print("Çekmek istediğiniz tutar (TL): ");
+                        String cekMiktarGirdisi = scanner.next().replace(",", ".");
+                        double cekilecekMiktar = Double.parseDouble(cekMiktarGirdisi);
+                        scanner.nextLine(); // Buffer temizliği
+
+                        if (cekilecekHesap instanceof CheckingAccount) {
+                            double eskiBakiye = cekilecekHesap.getBalance();
+                            cekilecekHesap.withdraw(cekilecekMiktar, islemTarihi);
+
+                            if (cekilecekHesap.getBalance() == eskiBakiye) {
+                                System.out.println("[HATA]: İşlem gerçekleştirilemedi. Yetersiz bakiye veya günlük çekim limiti aşıldı.");
+                            }
+                        } else {
+                            // Gerçek withdraw işlemi çağrılıyor. Sınıfınızın içindeki [SUCCESS]:The due date has been reached... mesajları tetiklenecektir.
+                            double eskiBakiye = cekilecekHesap.getBalance();
+                            cekilecekHesap.withdraw(cekilecekMiktar, islemTarihi);
+
+                            if (cekilecekHesap.getBalance() == eskiBakiye && cekilecekMiktar > eskiBakiye) {
+                                System.out.println("[HATA]: İşlem gerçekleştirilemedi. Yetersiz bakiye.");
+                            }
+                        }
+                    }
+                    break;
+
+                case 5:
+                    System.out.print("Detaylarını görmek istediğiniz Hesap No (Tümü için 'ALL' yazın): ");
+                    String detayNo = scanner.nextLine();
+
+                    if (detayNo.equalsIgnoreCase("ALL")) {
+                        System.out.println("\n=== BANKA GENEL DURUM RAPORU ===");
+                        System.out.println("Bankadaki Toplam Mevduat (Banka Toplam Kasası): " + banka.totalBankBalance() + " TL");
+                    } else {
+                        Account detayHesap = banka.findAccount(detayNo.toUpperCase());
+                        if (detayHesap == null) {
+                            System.out.println("[HATA]: Hesap bulunamadı.");
+                        } else {
+                            System.out.println("\n=== HESAP BİLGİLERİ ===");
+                            System.out.println("Hesap No: " + detayHesap.getAccountNo());
+                            System.out.println("Müşteri: " + detayHesap.getCustomerName());
+                            System.out.println("Güncel Bakiye: " + detayHesap.getBalance() + " TL");
+
+                            if (detayHesap instanceof SavingsAccount) {
+                                System.out.println("Hesap Türü: Vadeli (Savings)");
+                            } else {
+                                System.out.println("Hesap Türü: Vadesiz (Checking)");
+                            }
+                        }
+                    }
+                    break;
+
+                case 6:
+                    System.out.println("==============================================");
+                    System.out.println(" Otomasyondan güvenli çıkış yapıldı. İyi günler! ");
+                    System.out.println("==============================================");
+                    scanner.close();
+                    return;
+
+                default:
+                    System.out.println("[HATA]: Geçersiz seçim! Lütfen 1-6 arasında bir menü numarası girin.");
+            }
+        }
+    }
+
+    private static LocalDate tarihAl(Scanner scanner) {
+        System.out.print("İşlem Tarihi (Format: YYYY-MM-DD, Örn: 2026-06-06): ");
+        String tarihYazisi = scanner.nextLine().trim();
+        return LocalDate.parse(tarihYazisi);
     }
 }

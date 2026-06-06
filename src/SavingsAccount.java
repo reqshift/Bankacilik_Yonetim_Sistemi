@@ -13,6 +13,9 @@ public class SavingsAccount extends Account{
         //interestEndDate doesn't get from user, it is calculating with today and termDays
         this.interestEndDate = transactionDate.plusDays(termDays);
     }
+    public LocalDate getInterestEndDate() {
+        return this.interestEndDate;
+    }
     public boolean deposit(double amount,LocalDate transactionDate){ //override cancaled because transactionDate didn't use when we override from account
         LocalDate today = transactionDate;
         if(super.deposit(amount)) {//depositing money after calling deposit method
