@@ -1,3 +1,4 @@
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 public class Bank {
@@ -6,10 +7,17 @@ public class Bank {
     public Bank(){ // constructor
         this.accounts = new HashMap<>(); //opens in memory
     }
+    public Collection<Account> getAllAccounts(){ /// for getting all account lists
+        return accounts.values();
+    }
 
-    public void addAcount(Account account){
+    public void addAccount(Account account){
         String accountNumber = account.getAccountNo();//accountNo(key) gets from account class
-        accounts.put(accountNumber, account); // key=accountNumber, value=account add to the map(.put)
+        if(findAccount(accountNumber) == null){
+            accounts.put(accountNumber, account); // key=accountNumber, value=account add to the map(.put)
+        } else {
+            System.out.println("[ERROR]: Already " + accountNumber + " has created.");
+        }
     }
     public Account findAccount(String accountNo){
         return accounts.get(accountNo); //accountNo found and gets

@@ -39,7 +39,7 @@ public class Main {
                     String vadesizNo = scanner.nextLine().toUpperCase();
 
                     CheckingAccount yeniVadesiz = new CheckingAccount(vadesizNo, vadesizIsim, 2000.0, new SmsNotification());
-                    banka.addAcount(yeniVadesiz);
+                    banka.addAccount(yeniVadesiz);
                     System.out.println("[SİSTEM]: Vadesiz hesap başarıyla sisteme eklendi. Başlangıç bakiyesi: 0.0 TL");
                     break;
 
@@ -61,7 +61,7 @@ public class Main {
                     LocalDate acilisTarihi = tarihAl(scanner);
 
                     SavingsAccount yeniVadeli = new SavingsAccount(vadeliNo, vadeliIsim, faiz, gun, acilisTarihi, new EmailNotification());
-                    banka.addAcount(yeniVadeli);
+                    banka.addAccount(yeniVadeli);
                     System.out.println("[SİSTEM]: Vadeli hesap başarıyla sisteme eklendi.");
                     break;
 
@@ -85,8 +85,6 @@ public class Main {
                             ((SavingsAccount) yatirilacakHesap).deposit(yatirilacakMiktar, islemTarihi);
                         } else {
                             yatirilacakHesap.deposit(yatirilacakMiktar);
-                            System.out.printf("[SMS BİLDİRİMİ]: %s numaralı hesabınıza %,.2f TL yatırılmıştır. Güncel bakiye: %,.2f TL\n",
-                                    yatirilacakHesap.getAccountNo(), yatirilacakMiktar, yatirilacakHesap.getBalance());
                         }
                     }
                     break;
@@ -104,21 +102,27 @@ public class Main {
                         LocalDate islemTarihi = tarihAl(scanner);
 
                         // --- AKILLI BAKİYE VE FAİZ ÖNİZLEME ALANI ---
+                        // --- AKILLI BAKİYE VE FAİZ ÖNİZLEME ALANI ---
                         if (cekilecekHesap instanceof SavingsAccount) {
                             SavingsAccount vHesap = (SavingsAccount) cekilecekHesap;
                             double mevcutAnaPara = vHesap.getBalance();
 
                             System.out.println("[ÖNİZLEME]: Girilen tarih itibarıyla vade durumu kontrol ediliyor...");
 
-                            // Ekran görüntülerindeki test senaryosuna sadık kalıyoruz (%50 faiz oranına göre simülasyon)
-                            // Sisteminizde faiz oranı dinamik tutuluyorsa vHesap sınıfınızdaki çekim mantığı bunu zaten işletiyor,
-                            // ancak kullanıcı miktar girmeden ÖNCE önizleme amaçlı burada faizli toplamı gösteriyoruz:
-                            double tahminiFaizOrani = 0.50;
-                            double kazanilacakFaiz = mevcutAnaPara * tahminiFaizOrani;
-                            double faizliToplamBakiye = mevcutAnaPara + kazanilacakFaiz;
+                            if (islemTarihi.isBefore(vHesap.getInterestEndDate())) {
+                                // Vade henüz dolmadıysa (Erken Çekim Önizlemesi)
+                                System.out.printf("[UYARI]: Girilen tarih (%s), vade bitiş tarihinden (%s) önceden bir gündür.\n", islemTarihi, vHesap.getInterestEndDate());
+                                System.out.printf("[BİLGİ]: Erken çekim yapacağınız için faiz hakkınız yanacaktır. Çekilebilir mevcut ana paranız: %,.2f TL\n", mevcutAnaPara);
+                            } else {
+                                // Vade dolduysa veya geçtiyse (Normal Faizli Çekim Önizlemesi)
+                                double kazanilacakFaiz = mevcutAnaPara * vHesap.getInterestRate();
+                                double faizliToplamBakiye = mevcutAnaPara + kazanilacakFaiz;
 
-                            System.out.printf("[BİLGİ]: %s tarihi itibarıyla vade dolmuş olacağı için tahmini faiz dahil toplam çekilebilir bakiyeniz: %,.2f TL (Kazanılacak Faiz: %,.2f TL)\n",
-                                    islemTarihi, faizliToplamBakiye, kazanilacakFaiz);
+                                // Silinen mesaj satırını buraya ekledik:
+                                System.out.printf("[BİLGİ]: %s tarihi itibarıyla vade dolmuş olacağı için tahmini faiz dahil toplam çekilebilir bakiyeniz: %,.2f TL (Kazanılacak Faiz: %,.2f TL)\n",
+                                        islemTarihi, faizliToplamBakiye, kazanilacakFaiz);
+                            }
+
                         } else {
                             System.out.printf("[BİLGİ]: Mevcut bakiyeniz: %,.2f TL (Günlük Limit: 2.000,00 TL)\n", cekilecekHesap.getBalance());
                         }
@@ -154,7 +158,17 @@ public class Main {
 
                     if (detayNo.equalsIgnoreCase("ALL")) {
                         System.out.println("\n=== BANKA GENEL DURUM RAPORU ===");
-                        System.out.println("Bankadaki Toplam Mevduat (Banka Toplam Kasası): " + banka.totalBankBalance() + " TL");
+                        for (Account hesap : banka.getAllAccounts()) {
+                            if(hesap instanceof SavingsAccount){
+                                System.out.println("Hesap türü: Vadeli");
+                            } else {
+                                System.out.println("Hesap türü: Vadesiz");
+                            }
+                                System.out.println("Hesap No: " + hesap.getAccountNo());
+                                System.out.println("Müşteri: " + hesap.getCustomerName());
+                                System.out.println("Güncel Bakiye: " + hesap.getBalance() + " TL");
+                                System.out.println("-------------------------");
+                        }
                     } else {
                         Account detayHesap = banka.findAccount(detayNo.toUpperCase());
                         if (detayHesap == null) {

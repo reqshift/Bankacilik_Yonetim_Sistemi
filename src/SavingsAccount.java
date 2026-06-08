@@ -13,10 +13,13 @@ public class SavingsAccount extends Account{
         //interestEndDate doesn't get from user, it is calculating with today and termDays
         this.interestEndDate = transactionDate.plusDays(termDays);
     }
+    public double getInterestRate(){
+        return interestRate;
+    }
     public LocalDate getInterestEndDate() {
         return this.interestEndDate;
     }
-    public boolean deposit(double amount,LocalDate transactionDate){ //override cancaled because transactionDate didn't use when we override from account
+    public boolean deposit(double amount,LocalDate transactionDate){ //override canceled because transactionDate didn't use when we override from account
         LocalDate today = transactionDate;
         if(super.deposit(amount)) {//depositing money after calling deposit method
             this.interestEndDate = today.plusDays(this.termDays);//gets today's day and add termDays again(resets because money deposited
@@ -34,33 +37,36 @@ public class SavingsAccount extends Account{
         LocalDate today = transactionDate;
                 if (today.isBefore(interestEndDate)) {//today isn't end day yet
                     if (super.subtractBalance(amount)) {
-                        System.out.println("[ERROR]: A withdrawal was made before the due date. Your current interest accrual entitlement has been cancelled.");
-                        this.interestEndDate = today.plusDays(this.termDays);//resets end date to now
+                        System.out.println("[INFO]: Early withdrawal processed. Your current interest accrual entitlement has been cancelled.");                        this.interestEndDate = today.plusDays(this.termDays);//resets end date to now
                         getNotificationService().sendNotification("Amount of " + amount + " TL has been withdrawn from account " + getAccountNo() + ". Remaining balance: " + getBalance() + " TL");
                     }
                 } else {
-                    checkAndApplyInterest();
-                    if (super.subtractBalance(amount)) {
-                        System.out.println("[INFO]: The withdraw transaction completed.");
+                    double interestIncome = calculateInterest();
+                    double interestTotalBalance = getBalance() + interestIncome; // abstract total balance (not added yet)
+                    if (amount <=interestTotalBalance) { //if customer has enough money, interest will add and can be withdrawn
+                        applyInterest(interestIncome);
+                        super.subtractBalance(amount);
                         this.interestEndDate = today.plusDays(this.termDays);
                         getNotificationService().sendNotification("Amount of " + amount + " TL has been withdrawn from account " + getAccountNo() + ". Remaining balance: " + getBalance() + " TL");
                     } else {
-                        this.interestEndDate = today.plusDays(this.termDays);
+                        System.out.println("[ERROR]: Your total balance, including interest, is insufficient.");
                     }
                 }
     }
 
-    public boolean checkAndApplyInterest() {
+    public double calculateInterest() {
         double interestIncome = getBalance() * interestRate;
+        return interestIncome;
+    }
+
+    public boolean applyInterest(double interestIncome) {
         if (super.addBalance(interestIncome)) { //interest add to the total balance
             System.out.println("[SUCCESS]:The due date has been reached !Interest income added:" + interestIncome);
-
             return true;
         } else {
             System.out.println("[ERROR]:Interest income didn't add:");
             return false;
         }
-
     }
 
 }
