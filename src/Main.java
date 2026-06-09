@@ -33,36 +33,101 @@ public class Main {
 
             switch (secim) {
                 case 1:
-                    System.out.print("Müşteri Adı Soyadı: ");
-                    String vadesizIsim = scanner.nextLine();
-                    System.out.print("Hesap Numarası Girin (Örn: TR1001): ");
-                    String vadesizNo = scanner.nextLine().toUpperCase();
+                    String vadesizIsim = "";
+                    String vadesizNo = "";
+                    while(true) {
+                        System.out.print("Müşteri Adı Soyadı: ");
+                        vadesizIsim = scanner.nextLine().trim(); //.trim used to delete spaces (not in the word)
+                        if (vadesizIsim.isEmpty()) {
+                            System.out.println("[ERROR]: Müşteri adı boş olamaz.");
+                            continue;
+                        } else {
+                            break;
+                        }
+                    }
+                    while(true) {
+                        System.out.print("Hesap Numarası Girin (Örn: TR1001): ");
+                        vadesizNo = scanner.nextLine().trim().toUpperCase();
+                        if (vadesizNo.isEmpty()) {
+                            System.out.println("[ERROR]: Hesap numarası boş olamaz.");
+                            continue;
+                        } else {
+                            break;
+                        }
+                    }
 
                     CheckingAccount yeniVadesiz = new CheckingAccount(vadesizNo, vadesizIsim, 2000.0, new SmsNotification());
                     banka.addAccount(yeniVadesiz);
-                    System.out.println("[SİSTEM]: Vadesiz hesap başarıyla sisteme eklendi. Başlangıç bakiyesi: 0.0 TL");
                     break;
 
                 case 2:
-                    System.out.print("Müşteri Adı Soyadı: ");
-                    String vadeliIsim = scanner.nextLine();
-                    System.out.print("Hesap Numarası Girin (Örn: TR2002): ");
-                    String vadeliNo = scanner.nextLine().toUpperCase();
+                    String vadeliIsim = "";
+                    String vadeliNo = "";
+                    double faiz = 0.0;
+                    int gun = 0;
 
-                    System.out.print("Faiz Oranı (Örn: %45 için 0.45 girin): ");
-                    String faizGirdisi = scanner.next().replace(",", ".");
-                    double faiz = Double.parseDouble(faizGirdisi);
+                    while(true) {
+                        System.out.print("Müşteri Adı Soyadı: ");
+                        vadeliIsim = scanner.nextLine().trim();
+                        if (vadeliIsim.isEmpty()) {
+                            System.out.println("[ERROR]: Müşteri adı boş olamaz.");
+                            continue;
+                        } else {
+                            break;
+                        }
+                    }
+                    while(true) {
+                        System.out.print("Hesap Numarası Girin (Örn: TR1001): ");
+                        vadeliNo = scanner.nextLine().trim().toUpperCase();
+                        if (vadeliNo.isEmpty()) {
+                            System.out.println("[ERROR]: Hesap numarası boş olamaz.");
+                            continue;
+                        } else {
+                            break;
+                        }
+                    }
+                    while(true) {
+                        System.out.print("Faiz Oranı (Örn: %45 için 0.45 girin): ");
+                        java.lang.String faizGirdisi = scanner.nextLine().replace(",", ".").trim();
+                            if (faizGirdisi.isEmpty()) {
+                                System.out.println("[ERROR]: Faiz oranı boş bırakılamaz.");
+                                continue;
+                            }
+                            try {
+                                faiz = Double.parseDouble(faizGirdisi);
 
+                                if (faiz < 0) {
+                                    System.out.println("[ERROR]: Faiz oranı negatif bir değer olamaz.");
+                                    continue;
+                                }
+                                break;
+                            } catch (NumberFormatException e){ // Eğer Double.parseDouble("abc") gibi bir hata oluşursa program çökmez, buraya düşer:
+                                System.out.println("[ERROR]: Lütfen geçerli bir sayısal faiz oranı girin (Örn: 0.45)!");
+                            }
+                    }
+                    while(true){
                     System.out.print("Vade Gün Sayısı (Örn: 30): ");
-                    int gun = scanner.nextInt();
-                    scanner.nextLine(); // Buffer temizliği
-
+                    java.lang.String gunGirdisi = scanner.nextLine().trim();
+                        if(gunGirdisi.isEmpty()){
+                            System.out.println("[ERROR]: Vade gün sayısı boş bırakılamaz.");
+                            continue;
+                        }
+                        try {
+                            gun = Integer.parseInt(gunGirdisi);
+                            if (gun <= 0) {
+                                System.out.println("[ERROR]: Vade gün sayısı 0 veya negatif bir değer olamaz.");
+                                continue;
+                            }
+                            break;
+                        } catch (NumberFormatException e) {
+                            System.out.println("[ERROR]: Lütfen geçerli bir tam sayı girin (Örn: 30)!");
+                        }
+                    }
                     System.out.println("-> Hesap Açılış Tarihini Girmeniz Bekleniyor.");
                     LocalDate acilisTarihi = tarihAl(scanner);
 
                     SavingsAccount yeniVadeli = new SavingsAccount(vadeliNo, vadeliIsim, faiz, gun, acilisTarihi, new EmailNotification());
                     banka.addAccount(yeniVadeli);
-                    System.out.println("[SİSTEM]: Vadeli hesap başarıyla sisteme eklendi.");
                     break;
 
                 case 3:
@@ -128,7 +193,7 @@ public class Main {
                         }
 
                         // Kullanıcı artık toplam faizli bakiyeyi görerek tam olarak çekmek istediği miktarı yazıyor
-                        System.out.print("Çekmek istediğiniz tutar (TL): ");
+                        System.out.print("Çekmek istediğiniz tutar (TL cinsinden nokta veya virgül kullanmadan giriniz): ");
                         String cekMiktarGirdisi = scanner.next().replace(",", ".");
                         double cekilecekMiktar = Double.parseDouble(cekMiktarGirdisi);
                         scanner.nextLine(); // Buffer temizliği
@@ -155,6 +220,7 @@ public class Main {
                 case 5:
                     System.out.print("Detaylarını görmek istediğiniz Hesap No (Tümü için 'ALL' yazın): ");
                     String detayNo = scanner.nextLine();
+                    double toplamBankaBakiyesi = 0.0;
 
                     if (detayNo.equalsIgnoreCase("ALL")) {
                         System.out.println("\n=== BANKA GENEL DURUM RAPORU ===");
@@ -168,7 +234,12 @@ public class Main {
                                 System.out.println("Müşteri: " + hesap.getCustomerName());
                                 System.out.println("Güncel Bakiye: " + hesap.getBalance() + " TL");
                                 System.out.println("-------------------------");
+                                toplamBankaBakiyesi += hesap.getBalance();
                         }
+                        System.out.printf("BANKADAKİ TOPLAM HESAP SAYISI: %d\n", banka.getAllAccounts().size());
+                        System.out.printf("TOPLAM BANKA BAKİYESİ: %,.2f TL\n", toplamBankaBakiyesi);
+                        System.out.println("=================================");
+
                     } else {
                         Account detayHesap = banka.findAccount(detayNo.toUpperCase());
                         if (detayHesap == null) {
@@ -202,8 +273,22 @@ public class Main {
     }
 
     private static LocalDate tarihAl(Scanner scanner) {
-        System.out.print("İşlem Tarihi (Format: YYYY-MM-DD, Örn: 2026-06-06): ");
-        String tarihYazisi = scanner.nextLine().trim();
-        return LocalDate.parse(tarihYazisi);
+        while (true) {
+            System.out.print("İşlem Tarihi (Format: YYYY-MM-DD, Örn: 2026-06-06): ");
+            String tarihYazisi = scanner.nextLine().trim();
+
+            if (tarihYazisi.isEmpty()) {
+                System.out.println("[ERROR]: Tarih alanı boş bırakılamaz!");
+                continue;
+            }
+            try {
+                // Eğer girdi "2026-06-06" formatına tam uyuyorsa başarıyla parse edilir
+                // 'return' komutu çalıştığı anda metot o tarihi geri döndürür ve döngü de kendiliğinden biter
+                return LocalDate.parse(tarihYazisi);
+
+            } catch (Exception e) {
+                System.out.println("[ERROR]: Geçersiz tarih formatı! Lütfen YYYY-MM-DD formatına uyun (Yıl-Ay-Gün).");
+            }
+        }
     }
 }
