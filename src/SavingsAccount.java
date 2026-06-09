@@ -44,10 +44,11 @@ public class SavingsAccount extends Account{
                     double interestIncome = calculateInterest();
                     double interestTotalBalance = getBalance() + interestIncome; // abstract total balance (not added yet)
                     if (amount <=interestTotalBalance) { //if customer has enough money, interest will add and can be withdrawn
-                        applyInterest(interestIncome);
-                        super.subtractBalance(amount);
-                        this.interestEndDate = today.plusDays(this.termDays);
-                        getNotificationService().sendNotification("Amount of " + amount + " TL has been withdrawn from account " + getAccountNo() + ". Remaining balance: " + getBalance() + " TL");
+                        if(applyInterest(interestIncome)) {
+                            super.subtractBalance(amount);
+                            this.interestEndDate = today.plusDays(this.termDays);
+                            getNotificationService().sendNotification("Amount of " + amount + " TL has been withdrawn from account " + getAccountNo() + ". Remaining balance: " + getBalance() + " TL");
+                        }
                     } else {
                         System.out.println("[ERROR]: Your total balance, including interest, is insufficient.");
                     }
