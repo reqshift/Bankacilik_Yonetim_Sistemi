@@ -15,6 +15,11 @@ public class Bank {
         String accountNumber = account.getAccountNo();//accountNo(key) gets from account class
         if(findAccount(accountNumber) == null){
             accounts.put(accountNumber, account); // key=accountNumber, value=account add to the map(.put)
+            if(account instanceof SavingsAccount){
+                System.out.println("[SİSTEM]: Vadeli hesap başarıyla sisteme eklendi. Başlangıç bakiyesi: 0.0 TL");
+            } else {
+                System.out.println("[SİSTEM]: Vadesiz hesap başarıyla sisteme eklendi. Başlangıç bakiyesi: 0.0 TL");
+            }
         } else {
             System.out.println("[ERROR]: Already " + accountNumber + " has created.");
         }
