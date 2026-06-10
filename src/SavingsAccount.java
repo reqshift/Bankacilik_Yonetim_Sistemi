@@ -37,7 +37,8 @@ public class SavingsAccount extends Account{
         LocalDate today = transactionDate;
                 if (today.isBefore(interestEndDate)) {//today isn't end day yet
                     if (super.subtractBalance(amount)) {
-                        System.out.println("[INFO]: Early withdrawal processed. Your current interest accrual entitlement has been cancelled.");                        this.interestEndDate = today.plusDays(this.termDays);//resets end date to now
+                        System.out.println("[INFO]: Early withdrawal processed. Your current interest accrual entitlement has been cancelled.");
+                        this.interestEndDate = today.plusDays(this.termDays);//resets end date to now
                         getNotificationService().sendNotification("Amount of " + amount + " TL has been withdrawn from account " + getAccountNo() + ". Remaining balance: " + getBalance() + " TL");
                     }
                 } else {
