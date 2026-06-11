@@ -39,7 +39,7 @@ public class SavingsAccount extends Account{
                     if (super.subtractBalance(amount)) {
                         System.out.println("[INFO]: Early withdrawal processed. Your current interest accrual entitlement has been cancelled.");
                         this.interestEndDate = today.plusDays(this.termDays);//resets end date to now
-                        getNotificationService().sendNotification("Amount of " + amount + " TL has been withdrawn from account " + getAccountNo() + ". Remaining balance: " + getBalance() + " TL");
+                        getNotificationService().sendNotification(String.format("Amount of %.1f TL has been withdrawn from account %s. Remaining balance: %.2f TL", amount, getAccountNo(), getBalance()));
                     }
                 } else {
                     double interestIncome = calculateInterest();
@@ -48,7 +48,7 @@ public class SavingsAccount extends Account{
                         if(applyInterest(interestIncome)) {
                             super.subtractBalance(amount);
                             this.interestEndDate = today.plusDays(this.termDays);
-                            getNotificationService().sendNotification("Amount of " + amount + " TL has been withdrawn from account " + getAccountNo() + ". Remaining balance: " + getBalance() + " TL");
+                            getNotificationService().sendNotification(String.format("Amount of %.1f TL has been withdrawn from account %s. Remaining balance: %.2f TL", amount, getAccountNo(), getBalance()));
                         }
                     } else {
                         System.out.println("[ERROR]: Your total balance, including interest, is insufficient.");

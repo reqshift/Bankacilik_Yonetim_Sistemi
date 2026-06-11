@@ -57,7 +57,13 @@ public class Main {
                     }
 
                     CheckingAccount yeniVadesiz = new CheckingAccount(vadesizNo, vadesizIsim, 2000.0, new SmsNotification());
-                    banka.addAccount(yeniVadesiz);
+                    //Created for bank's checking account UI
+                    boolean vadesizEklendiMi = banka.addAccount(yeniVadesiz);
+                    if (vadesizEklendiMi) {
+                        System.out.println("[SİSTEM]: Vadesiz hesap başarıyla sisteme eklendi. Başlangıç bakiyesi: 0.0 TL");
+                    } else {
+                        System.out.println("[HATA]: " + vadesizNo + " numaralı hesap sistemde zaten mevcut!");
+                    }
                     break;
 
                 case 2:
@@ -127,10 +133,16 @@ public class Main {
                     LocalDate acilisTarihi = tarihAl(scanner);
 
                     SavingsAccount yeniVadeli = new SavingsAccount(vadeliNo, vadeliIsim, faiz, gun, acilisTarihi, new EmailNotification());
-                    banka.addAccount(yeniVadeli);
+                    boolean vadeliEklendiMi = banka.addAccount(yeniVadeli);
+                    if(vadeliEklendiMi){
+                        System.out.println("[SİSTEM]: Vadeli hesap başarıyla sisteme eklendi. Başlangıç bakiyesi: 0.0 TL");
+                    } else {
+                        System.out.println("[HATA]: " + vadeliNo + " numaralı hesap sistemde zaten mevcut!");
+                    }
                     break;
 
                 case 3:
+                    double yatirilacakMiktar = 0.0;
                     System.out.print("Para yatırılacak Hesap No: ");
                     String yatirilacakNo = scanner.nextLine().toUpperCase();
 
@@ -138,11 +150,24 @@ public class Main {
                     if (yatirilacakHesap == null) {
                         System.out.println("[HATA]: Belirtilen hesap numarası sistemde bulunamadı!");
                     } else {
-                        System.out.print("Yatırmak istediğiniz tutar (TL): ");
-                        String miktarGirdisi = scanner.next().replace(",", ".");
-                        double yatirilacakMiktar = Double.parseDouble(miktarGirdisi);
-                        scanner.nextLine(); // Buffer temizliği
-
+                        while (true) {
+                            System.out.print("Yatırmak istediğiniz tutar (TL): ");
+                            String miktarGirdisi = scanner.nextLine().trim();
+                            if(miktarGirdisi.isEmpty()){
+                                System.out.println("[ERROR]: Yatırmak istenen para alanı boş bırakılamaz.");
+                                continue;
+                            }
+                            try{
+                                miktarGirdisi = miktarGirdisi.replace(",",".");
+                                yatirilacakMiktar = Double.parseDouble(miktarGirdisi);
+                                if(yatirilacakMiktar <= 0){
+                                    System.out.println("[ERROR]: Yatırmak istenen miktar sıfır ya da sıfırdan küçük olamaz.");
+                                    continue;
+                                } break;
+                            } catch (NumberFormatException e) {
+                                System.out.println("[ERROR]: Lütfen sadece geçerli bir sayısal tutar giriniz! (Örn: 1000 veya 1500.50)");
+                            }
+                        }
                         System.out.println("-> Para Yatırma İşlem Tarihini Girmeniz Bekleniyor.");
                         LocalDate islemTarihi = tarihAl(scanner);
 
@@ -156,6 +181,7 @@ public class Main {
 
                 case 4:
                     // 4 - HESAPTAN PARA ÇEK
+                    double cekilecekMiktar = 0.0;
                     System.out.print("Para çekilecek Hesap No: ");
                     String cekilecekNo = scanner.nextLine().toUpperCase();
 
@@ -193,10 +219,28 @@ public class Main {
                         }
 
                         // Kullanıcı artık toplam faizli bakiyeyi görerek tam olarak çekmek istediği miktarı yazıyor
-                        System.out.print("Çekmek istediğiniz tutar (TL cinsinden nokta veya virgül kullanmadan giriniz): ");
-                        String cekMiktarGirdisi = scanner.next().replace(",", ".");
-                        double cekilecekMiktar = Double.parseDouble(cekMiktarGirdisi);
-                        scanner.nextLine(); // Buffer temizliği
+                        while (true) {
+                            System.out.print("Çekmek istediğiniz tutarı giriniz (Kuruş belirtmek için nokta veya virgül kullanabilirsiniz): ");
+                            String cekMiktarGirdisi = scanner.nextLine().trim();
+
+                            if (cekMiktarGirdisi.isEmpty()) {
+                                System.out.println("[ERROR]: Çekilmek istenen para alanı boş bırakılamaz.");
+                                continue;
+                            }
+                            try {
+                                cekMiktarGirdisi = cekMiktarGirdisi.replace(",", ".");
+                                cekilecekMiktar = Double.parseDouble(cekMiktarGirdisi);
+
+                                if (cekilecekMiktar <= 0) {
+                                    System.out.println("[ERROR]: Çekilmek istenen miktar sıfır ya da sıfırdan küçük olamaz.");
+                                    continue;
+                                }
+                                break;
+
+                            } catch (NumberFormatException e) {
+                                System.out.println("[ERROR]: Lütfen sadece geçerli bir sayısal tutar giriniz! (Örn: 1000 veya 1500.50)");
+                            }
+                        }
 
                         if (cekilecekHesap instanceof CheckingAccount) {
                             double eskiBakiye = cekilecekHesap.getBalance();
