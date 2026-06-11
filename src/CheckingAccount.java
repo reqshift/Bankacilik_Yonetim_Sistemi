@@ -23,7 +23,6 @@ public class CheckingAccount extends Account {
                 } else if (super.subtractBalance(amount)) {
                     System.out.println("[INFO]: The withdraw transaction completed.");
                     totalAmount += amount;
-                    getNotificationService().sendNotification("Amount of " + amount + " TL has been withdrawn from account " + getAccountNo() + ". Current balance: " + getBalance() + " TL");
-                }
+                    getNotificationService().sendNotification(String.format("Amount of %.1f TL has been withdrawn from account %s. Remaining balance: %.2f TL", amount, getAccountNo(), getBalance()));                }
     }
 }
